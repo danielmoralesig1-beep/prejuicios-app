@@ -7,7 +7,6 @@ st.title("🏛️ Panel de Control PRE-juicios")
 
 DB_FILE = "leads_prejuicios.csv"
 
-# Función para guardar los datos cuando Netlify los envía
 def guardar_datos(nombre, telefono, deuda, estado):
     nuevo_lead = {
         "Fecha": pd.Timestamp.now(tz='America/Santiago').strftime("%d/%m/%Y %H:%M"),
@@ -22,7 +21,7 @@ def guardar_datos(nombre, telefono, deuda, estado):
     else:
         df_nuevo.to_csv(DB_FILE, mode='a', header=False, index=False)
 
-# --- ESTO RECIBE LOS DATOS DE TU WEB ---
+# Captura de datos desde la URL
 query_params = st.query_params
 if "name" in query_params:
     guardar_datos(
@@ -31,11 +30,12 @@ if "name" in query_params:
         query_params["debt"], 
         query_params["status"]
     )
-    st.success("¡Nuevo lead registrado!")
+    st.success("¡Nuevo cliente registrado!")
 
-# --- MOSTRAR LA TABLA ---
+# Mostrar tabla
 if os.path.isfile(DB_FILE):
     df = pd.read_csv(DB_FILE)
+    st.write(f"Total de Leads: {len(df)}")
     st.dataframe(df.sort_index(ascending=False), use_container_width=True)
 else:
     st.info("Esperando clientes de la landing page...")
