@@ -1,37 +1,41 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime
 
-# Configuración de la página
-st.set_page_config(page_title="Panel de Leads - PREjuicios", layout="wide")
-
-# Título para tu panel interno
+st.set_page_config(page_title="Panel PRE-juicios", layout="wide")
 st.title("🏛️ Panel de Control PRE-juicios")
-st.subheader("Base de Datos de Leads (Consultas de la Web)")
 
-# Nombre del archivo donde se guardarán los datos
 DB_FILE = "leads_prejuicios.csv"
 
-# Función para guardar datos que vienen de la Web
-def guardar_lead(datos):
-    df_nuevo = pd.DataFrame([datos])
+# Función para guardar los datos cuando Netlify los envía
+def guardar_datos(nombre, telefono, deuda, estado):
+    nuevo_lead = {
+        "Fecha": pd.Timestamp.now(tz='America/Santiago').strftime("%d/%m/%Y %H:%M"),
+        "Nombre": nombre,
+        "WhatsApp": telefono,
+        "Monto Deuda": deuda,
+        "Estado Legal": estado
+    }
+    df_nuevo = pd.DataFrame([nuevo_lead])
     if not os.path.isfile(DB_FILE):
         df_nuevo.to_csv(DB_FILE, index=False)
     else:
         df_nuevo.to_csv(DB_FILE, mode='a', header=False, index=False)
 
-# --- INTERFAZ DEL PANEL ---
+# --- ESTO RECIBE LOS DATOS DE TU WEB ---
+query_params = st.query_params
+if "name" in query_params:
+    guardar_datos(
+        query_params["name"], 
+        query_params["phone"], 
+        query_params["debt"], 
+        query_params["status"]
+    )
+    st.success("¡Nuevo lead registrado!")
+
+# --- MOSTRAR LA TABLA ---
 if os.path.isfile(DB_FILE):
     df = pd.read_csv(DB_FILE)
-    st.write(f"Total de personas que han consultado: {len(df)}")
-    st.dataframe(df.sort_index(ascending=False)) # Muestra los más recientes arriba
-    
-    # Botón para descargar tu lista en Excel/CSV
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("Descargar reporte detallado", csv, "leads.csv", "text/csv")
+    st.dataframe(df.sort_index(ascending=False), use_container_width=True)
 else:
-    st.info("Aún no hay consultas registradas. ¡Tu landing está lista para recibir clientes!")
-
-# --- ESTO ES LO QUE RECIBE LOS DATOS DE NETLIFY ---
-# Nota: Streamlit Cloud maneja la recepción de datos mediante este script
+    st.info("Esperando clientes de la landing page...")
